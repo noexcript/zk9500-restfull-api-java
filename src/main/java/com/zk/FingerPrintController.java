@@ -20,9 +20,6 @@ import javax.ws.rs.core.Response;
 import com.zkteco.biometric.FingerprintSensorErrorCode;
 import com.zkteco.biometric.FingerprintSensorEx;
 
-
-
-
 @Path("fingerprint")
 public class FingerPrintController {
 
@@ -231,8 +228,7 @@ public class FingerPrintController {
                         }
                     }
 
-                    Response response = OnCatpureOK(imgbuf);
-
+                    OnCatpureOK(imgbuf);
                     OnExtractOK(template, templateLen[0]);
                 }
                 try {
@@ -251,7 +247,7 @@ public class FingerPrintController {
         }
     }
 
-    private Response OnCatpureOK(byte[] imgBuf) {
+    private void OnCatpureOK(byte[] imgBuf) {
         try {
             writeBitmap(imgBuf, fpWidth, fpHeight, "fingerprint.png");
 
@@ -266,10 +262,13 @@ public class FingerPrintController {
             Map<String, String> responseMap = new HashMap<>();
             responseMap.put("image", base64Image);
 
-            return Response.ok(responseMap).build(); // Retorna o JSON com a imagem em Base64
+            System.out.println(responseMap);
+
+            // return Response.ok(responseMap).build(); // Retorna o JSON com a imagem em
+            // Base64
         } catch (IOException e) {
             e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Erro ao capturar imagem").build();
+
         }
     }
 
