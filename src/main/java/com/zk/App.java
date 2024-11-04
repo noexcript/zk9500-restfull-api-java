@@ -16,18 +16,16 @@ public class App {
 
     public static void main(String[] args) {
         final HttpServer server = startServer();
-        // ZKFingerReader reader = new ZKFingerReader();
-
-        
-        System.out.println("Servidor iniciado em: " + BASE_URI);
-        
-        // Keep the server running
+        FingerFingerSocket.getInstance();
+        System.out.println("Servidor HTTP iniciado em: " + BASE_URI);
+        System.out.println("Servidor Socket.IO iniciado em: http://localhost:8081");
         try {
-            Thread.currentThread().join(); // Keeps the main thread alive
+            Thread.currentThread().join(); 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } finally {
+            server.shutdownNow(); 
         }
-        
-        // server.shutdownNow(); // Uncomment this line if you want to shut down the server later
+
     }
 }
