@@ -75,7 +75,7 @@ public class FingerPrintController {
         }
         mhDevice = FingerprintSensorEx.OpenDevice(0);
 
-        if (0 == mhDevice) {
+        if (mhDevice==0) {
             this.FreeSensor();
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("Falha ao abrir dispositivo" + ret + "!")
@@ -138,7 +138,7 @@ public class FingerPrintController {
     @Produces(MediaType.APPLICATION_JSON)
     public Response enrollFingerPrint() {
 
-        if (0 == mhDevice) {
+        if (mhDevice==0) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Ligar o dispositivo").build();
         }
         if (!bRegister) {
@@ -159,7 +159,7 @@ public class FingerPrintController {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response verifyFingerprint(Map<String, Object> request) {
 
-        if (0 == mhDevice) {
+        if (mhDevice==0) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Ligar o dispositivo").build();
         }
         if (bRegister) {
@@ -177,7 +177,7 @@ public class FingerPrintController {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response identifyFingerprint(Map<String, Object> request) {
-        if (0 == mhDevice) {
+        if (mhDevice==0) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Ligar o dispositivo").build();
         }
         if (bRegister) {
