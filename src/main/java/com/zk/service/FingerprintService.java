@@ -19,24 +19,14 @@ public class FingerprintService {
     private static final int ENROLL_COUNT = 3;
     private static final int TEMPLATE_SIZE = 2048;
 
-    private long mhDevice = 0;
-    private long mhDB = 0;
     private boolean mbStop = true;
-    private int fpWidth = 0;
-    private int fpHeight = 0;
     private String bufferes = null;
 
     private byte[] lastRegTemp = new byte[TEMPLATE_SIZE];
-    private int cbRegTemp = 0;
     private byte[][] regtemparray = new byte[3][TEMPLATE_SIZE];
 
-    private boolean bRegister = false;
-    private boolean bIdentify = true;
-    private int iFid = 1;
     private int nFakeFunOn = 1;
-    private int enroll_idx = 0;
-
-    private byte[] imgbuf = null;
+    // private byte[] imgbuf = null;
     private byte[] template = new byte[TEMPLATE_SIZE];
     private int[] templateLen = new int[1];
 
@@ -90,7 +80,7 @@ public class FingerprintService {
         }
         service.setDb(mhDB);
 
-        FingerprintSensorEx.DBSetParameter(mhDB, 5010, 0); // Ansi format
+        FingerprintSensorEx.DBSetParameter(service.getDb(), 5010, 0); // Ansi format
         setupDeviceParameters();
         return true;
     }
@@ -103,16 +93,23 @@ public class FingerprintService {
         size[0] = 4;
 
         FingerprintSensorEx.GetParameters(service.getDevice(), 1, paramValue, size);
-        fpWidth = FingerprintUtils.byteArrayToInt(paramValue);
+        service.setWidth(FingerprintUtils.byteArrayToInt(paramValue));
 
         size[0] = 4;
         FingerprintSensorEx.GetParameters(service.getDevice(), 2, paramValue, size);
-        fpHeight = FingerprintUtils.byteArrayToInt(paramValue);
+        service.setHeight(FingerprintUtils.byteArrayToInt(paramValue));
 
-        imgbuf = new byte[fpWidth * fpHeight];
+        service.setImageBuf(new byte[service.getWidth() * service.getHeigth()]);
     }
 
     private Response startCapture() {
+        FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
+
+        if (service.isCaptureRunning()) {
+            return Response.status(Response.Status.OK)
+                    .entity("Captura de impressão digital já está em andamento")
+                    .build();
+        }
         mbStop = false;
         CompletableFuture<String> future = new CompletableFuture<>();
         workThread = new WorkThread(future);
@@ -120,18 +117,34 @@ public class FingerprintService {
 
         return future.handle((base64Image, ex) -> {
             if (ex != null) {
+                service.setCaptureRunning(false);
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                         .entity("Erro ao capturar imagem: " + ex.getMessage())
                         .build();
             }
 
             if (base64Image != null && !base64Image.isEmpty()) {
-                return Response.ok(base64Image).build(); // Retorna a imagem base64
+                service.setCaptureRunning(false);
+                return Response.ok(base64Image).build();
             } else {
-                return Response.ok("Conectado com sucesso").build(); // Retorna mensagem de sucesso
+                service.setCaptureRunning(false);
+                return Response.ok("Conectado com sucesso").build();
             }
         }).join();
 
+    }
+
+    public Response stopCapture() {
+        FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
+
+        if (service.isCaptureRunning()) {
+            mbStop = true;
+            service.setCaptureRunning(false);
+            return Response.ok("Captura interrompida com sucesso").build();
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Nenhuma captura em andamento").build();
+        }
     }
 
     public Response enrollFingerprint() {
@@ -143,12 +156,12 @@ public class FingerprintService {
         }
 
         if (!service.isRegister()) {
-            service.setEnrollIdx(0); // Reseta o índice de registro
+            service.setEnrollIdx(0);
             service.setRegister(true);
-            return Response.ok("Please place your finger three times").build();
+            // return Response.ok("Please place your finger three times").build();
         }
 
-        return Response.ok("Registration successful").build();
+        return startCapture();
     }
 
     public Response verifyFingerprint() {
@@ -160,7 +173,94 @@ public class FingerprintService {
         }
 
         resetState();
-        return Response.ok("Verification successful").build();
+        // String base64Image = captureFingerprint(service.getImageBuf());
+        // return Response.ok(base64Image).build();
+        return startCapture();
+    }
+
+    public Response registarFingerprint() {
+        FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
+        if (service.getDb() == 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Please turn on the device")
+                    .build();
+        }
+
+        String path = "d:\\test\\fingerprint.png";
+        byte[] fpTemplate = new byte[2048];
+        int[] sizeFPTemp = new int[1];
+        sizeFPTemp[0] = 2048;
+
+        int ret = FingerprintSensorEx.ExtractFromImage(service.getDb(), path, 500, fpTemplate, sizeFPTemp);
+
+        if (ret == 0) {
+            ret = FingerprintSensorEx.DBAdd(service.getDb(), service.getFid(), fpTemplate);
+            if (ret == 0) {
+                service.setFid(service.getFid() + 1);
+                service.setRegTemp(sizeFPTemp[0]);
+                System.arraycopy(fpTemplate, 0, lastRegTemp, 0, service.getRegTemp());
+                return Response.ok("Sucesso no cadastramento").build();
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST).entity("DBAdd fail ret=" + ret).build();
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).entity("ExtractFromImage ret=" + ret).build();
+        }
+    }
+
+    public Response identificarImage() {
+        FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
+        if (service.getDb() == 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Please turn on the device")
+                    .build();
+        }
+
+        String path = "d:\\test\\fingerprint.png";
+        byte[] fpTemplate = new byte[2048];
+        int[] sizeFPTemp = new int[1];
+        sizeFPTemp[0] = 2048;
+
+        int ret = FingerprintSensorEx.ExtractFromImage(service.getDb(), path, 500, fpTemplate, sizeFPTemp);
+
+        if (ret == 0) {
+            if (service.isIdentify()) {
+                int[] fid = new int[1];
+                int[] score = new int[1];
+                ret = FingerprintSensorEx.DBIdentify(service.getDb(), fpTemplate, fid, score);
+
+                if (ret == 0) {
+                    return Response.ok("Identificação com sucesso fid=" + fid[0] + ", score=" + score[0]).build();
+                } else {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity("Identify fail, errcode=" + ret)
+                            .build();
+                }
+            } else {
+
+                if (service.getRegTemp() <= 0) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity("Please register first!")
+                            .build();
+
+                } else {
+                    ret = FingerprintSensorEx.DBMatch(service.getDb(), lastRegTemp, fpTemplate);
+                    if (ret > 0) {
+                        return Response.ok("Verify succ, score=" + ret).build();
+                    } else {
+                        return Response.status(Response.Status.BAD_REQUEST)
+                                .entity("Verify fail, ret=" + ret)
+                                .build();
+
+                    }
+                }
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("ExtractFromImage fail, ret=" + ret)
+                    .build();
+
+        }
     }
 
     public Response identifyFingerprint() {
@@ -181,7 +281,9 @@ public class FingerprintService {
             service.setIdentify(true);
         }
 
-        return Response.ok("Identification successful").build();
+        // String base64Image = captureFingerprint(service.getImageBuf());
+        // return Response.ok(base64Image).build();
+        return startCapture();
     }
 
     public Response closeDevice() {
@@ -237,24 +339,27 @@ public class FingerprintService {
             FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
             while (!mbStop) {
                 templateLen[0] = TEMPLATE_SIZE;
-                int ret = FingerprintSensorEx.AcquireFingerprint(service.getDevice(), imgbuf, template, templateLen);
+                int ret = FingerprintSensorEx.AcquireFingerprint(service.getDevice(), service.getImageBuf(), template,
+                        templateLen);
 
                 if (ret == 0) {
                     if (checkFakeStatus()) {
                         continue;
                     }
 
-                    bufferes = captureFingerprint(imgbuf);
+                    bufferes = captureFingerprint(service.getImageBuf());
                     processTemplate(template, templateLen[0]);
                     future.complete(bufferes);
                 }
 
                 try {
                     Thread.sleep(500);
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+            service.setCaptureRunning(false);
         }
 
         private boolean checkFakeStatus() {
@@ -274,8 +379,9 @@ public class FingerprintService {
     }
 
     private String captureFingerprint(byte[] imgBuf) {
+        FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         try {
-            BitmapUtils.writeBitmap(imgBuf, fpWidth, fpHeight, "fingerprint.png");
+            BitmapUtils.writeBitmap(imgBuf, service.getWidth(), service.getHeigth(), "fingerprint.png");
             BufferedImage image = ImageIO.read(new File("fingerprint.png"));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(image, "png", baos);
@@ -333,11 +439,11 @@ public class FingerprintService {
         int ret = FingerprintSensorEx.DBMerge(service.getDb(), regtemparray[0], regtemparray[1], regtemparray[2],
                 regTemp, retLen);
         if (ret == 0) {
-            ret = FingerprintSensorEx.DBAdd(service.getDb(), iFid, regTemp);
+            ret = FingerprintSensorEx.DBAdd(service.getDb(), service.getFid(), regTemp);
             if (ret == 0) {
-                iFid++;
-                cbRegTemp = retLen[0];
-                System.arraycopy(regTemp, 0, lastRegTemp, 0, cbRegTemp);
+                service.setFid(service.getFid() + 1);
+                service.setRegTemp(retLen[0]);
+                System.arraycopy(regTemp, 0, lastRegTemp, 0, service.getRegTemp());
             }
         }
         service.setRegister(false);
@@ -349,7 +455,7 @@ public class FingerprintService {
             int[] fid = new int[1];
             int[] score = new int[1];
             FingerprintSensorEx.DBIdentify(service.getDb(), template, fid, score);
-        } else if (cbRegTemp > 0) {
+        } else if (service.getRegTemp() > 0) {
             FingerprintSensorEx.DBMatch(service.getDb(), lastRegTemp, template);
         }
     }

@@ -9,11 +9,66 @@ public class FingerprintServiceSingleton {
     private boolean bRegister = false;
     private boolean bIdentify = true;
     private int enroll_idx = 0;
+    private boolean isCaptureRunning = false;
+    private byte[] imgBuf = null;
+    private int width = 0;
+    private int cbRegTemp = 0;
+    private int height = 0;
+    private int iFid = 1;
 
-    private FingerprintServiceSingleton() { }
+    private FingerprintServiceSingleton() {
+    }
 
     public static FingerprintServiceSingleton getInstance() {
         return INSTANCE;
+    }
+
+    public boolean isCaptureRunning() {
+        return isCaptureRunning;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public void setRegTemp(int cbRegTemp) {
+        this.cbRegTemp = cbRegTemp;
+    }
+
+    public int getRegTemp() {
+        return this.cbRegTemp;
+    }
+
+    public int getFid() {
+        return this.iFid;
+    }
+
+    public void setFid(int iFid) {
+        this.iFid = iFid;
+    }
+
+    public int getWidth() {
+        return this.width;
+    }
+
+    public int getHeigth() {
+        return this.height;
+    }
+
+    public void setCaptureRunning(boolean isCaptureRunning) {
+        this.isCaptureRunning = isCaptureRunning;
+    }
+
+    public void setImageBuf(byte[] imgBuf) {
+        this.imgBuf = imgBuf;
+    }
+
+    public byte[] getImageBuf() {
+        return this.imgBuf;
     }
 
     public long getDevice() {
@@ -52,6 +107,10 @@ public class FingerprintServiceSingleton {
         this.bRegister = false;
         this.bIdentify = true;
         this.enroll_idx = 0;
+        this.isCaptureRunning = false;
+        this.imgBuf = null;
+        this.cbRegTemp = 0;
+        this.iFid = 1;
     }
 
     public int getEnrollIdx() {
@@ -62,4 +121,3 @@ public class FingerprintServiceSingleton {
         this.enroll_idx = enroll_idx;
     }
 }
-
