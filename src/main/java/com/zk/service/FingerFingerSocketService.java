@@ -1,4 +1,4 @@
-package com.zk;
+package com.zk.service;
 
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.Configuration;
@@ -11,13 +11,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class FingerFingerSocket {
-    private static FingerFingerSocket instance;
+public class FingerFingerSocketService {
+    private static FingerFingerSocketService instance;
     private SocketIOServer server;
 
     private Set<String> connectedClients = new HashSet<>();
 
-    private FingerFingerSocket() {
+    private FingerFingerSocketService() {
         Configuration config = new Configuration();
         config.setHostname("127.0.0.1");
         config.setPort(8082);
@@ -59,9 +59,9 @@ public class FingerFingerSocket {
         System.out.println("Servidor Socket.IO iniciado. Pressione Ctrl+C para parar.");
     }
 
-    public static synchronized FingerFingerSocket getInstance() {
+    public static synchronized FingerFingerSocketService getInstance() {
         if (instance == null) {
-            instance = new FingerFingerSocket();
+            instance = new FingerFingerSocketService();
         }
         return instance;
     }

@@ -1,31 +1,103 @@
 package com.zk;
 
 import java.net.URI;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
-public class App {
-    public static final String BASE_URI = "http://localhost:8080/";
+import com.zk.exception.FingerPrintException;
+import com.zk.service.FingerFingerSocketService;
 
-    public static HttpServer startServer() {
-        final ResourceConfig rc = new ResourceConfig().packages("com.zk");
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
+public class App {
+    private static final Logger LOGGER = Logger.getLogger(App.class.getName());
+    private static final String HTTP_SERVER_URI = "http://localhost:8080/";
+    private static final String SOCKET_SERVER_URI = "http://localhost:8081";
+
+    private HttpServer server;
+    private static App instance;
+
+    private App() {
     }
 
-    public static void main(String[] args) {
-        final HttpServer server = startServer();
-        FingerFingerSocket.getInstance();
-        System.out.println("Servidor HTTP iniciado em: " + BASE_URI);
-        System.out.println("Servidor Socket.IO iniciado em: http://localhost:8081");
+    public static App getInstance() {
+        if (instance == null) {
+            instance = new App();
+        }
+        return instance;
+    }
+
+    public void startApplication() {
         try {
-            Thread.currentThread().join(); 
+            initializeServers();
+            waitForShutdown();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error starting application", e);
+            shutdown();
+        }
+    }
+
+    private void initializeServers() {
+        try {
+           
+            server = createHttpServer();
+            FingerFingerSocketService.getInstance();
+            logServerStartup();
+        } catch (Exception e) {
+            throw new FingerPrintException("Failed to initialize servers", e);
+        }
+    }
+
+    private HttpServer createHttpServer() {
+        ResourceConfig resourceConfig = new ResourceConfig()
+                .packages("com.zk");
+
+        return GrizzlyHttpServerFactory.createHttpServer(
+                URI.create(HTTP_SERVER_URI),
+                resourceConfig,
+                false 
+        );
+    }
+
+    private void logServerStartup() {
+        LOGGER.info(() -> String.format("HTTP Server started at: %s", HTTP_SERVER_URI));
+        LOGGER.info(() -> String.format("Socket.IO Server started at: %s", SOCKET_SERVER_URI));
+    }
+
+    private void waitForShutdown() {
+       
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+
+        try {
+            server.start();
+            Thread.currentThread().join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } finally {
-            server.shutdownNow(); 
+            LOGGER.log(Level.WARNING, "Server interrupted", e);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error during server operation", e);
         }
+    }
+
+    public void shutdown() {
+        LOGGER.info("Initiating server shutdown...");
+        try {
+            if (server != null) {
+                server.shutdownNow();
+            }
+            LOGGER.info("Server shutdown completed successfully");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error during server shutdown", e);
+        }
+    }
+    
+
+   
+
+    public static void main(String[] args) {
+        App.getInstance().startApplication();
 
     }
 }
