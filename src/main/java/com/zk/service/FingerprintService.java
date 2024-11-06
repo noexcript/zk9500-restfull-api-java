@@ -12,6 +12,7 @@ import javax.ws.rs.core.Response;
 
 import com.zk.utils.BitmapUtils;
 import com.zk.utils.FingerprintUtils;
+import com.zk.utils.ResponseBody;
 import com.zkteco.biometric.FingerprintSensorErrorCode;
 import com.zkteco.biometric.FingerprintSensorEx;
 
@@ -38,33 +39,42 @@ public class FingerprintService {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
 
         if (service.getDevice() != 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Device is already open")
-                    .build();
+            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Dispositivo já está aberto",
+                    null);
+            // return Response.status(Response.Status.BAD_REQUEST)
+            //         .entity("Device is already open")
+            //         .build();
         }
 
         int ret = FingerprintSensorEx.Init();
         if (ret != FingerprintSensorErrorCode.ZKFP_ERR_OK) {
             freeSensor();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Failed to initialize")
-                    .build();
+            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao inicializar",
+                    null);
+            // return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            // .entity("Failed to initialize")
+            // .build();
         }
 
         long device = FingerprintSensorEx.OpenDevice(0);
         if (device == 0) {
             freeSensor();
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Failed to open device: " + ret)
-                    .build();
+
+            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao abrir o dispositivo",
+                    null);
+            // return Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Failed to open device: " + ret)
+            // .build();
         }
 
         service.setDevice(device);
 
         if (!initializeDevice()) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Failed to initialize device")
-                    .build();
+            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao inicializar o dispositivo",
+                    null);
+            // Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            // .entity("Failed to initialize device")
+            // .build();
         }
 
         return startCapture();
@@ -106,9 +116,11 @@ public class FingerprintService {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
 
         if (service.isCaptureRunning()) {
-            return Response.status(Response.Status.OK)
-                    .entity("Captura de impressão digital já está em andamento")
-                    .build();
+            return this.creatResponse(Response.Status.OK,"Captura de impressão digital já está em andamento", null);
+                    
+            // Response.status(Response.Status.OK)
+            // .entity("Captura de impressão digital já está em andamento")
+            // .build();
         }
         mbStop = false;
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -118,17 +130,20 @@ public class FingerprintService {
         return future.handle((base64Image, ex) -> {
             if (ex != null) {
                 service.setCaptureRunning(false);
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Erro ao capturar imagem: " + ex.getMessage())
-                        .build();
+                return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Erro ao capturar imagem", null);
+                // Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                // .entity("Erro ao capturar imagem: " + ex.getMessage())
+                // .build();
             }
 
             if (base64Image != null && !base64Image.isEmpty()) {
                 service.setCaptureRunning(false);
-                return Response.ok(base64Image).build();
+                return this.creatResponse(Response.Status.OK, "", base64Image);
+                // return Response.ok(base64Image).build();
             } else {
                 service.setCaptureRunning(false);
-                return Response.ok("Conectado com sucesso").build();
+                return this.creatResponse(Response.Status.OK, "Conectado com sucesso", null);
+                // Response.ok("Conectado com sucesso").build();
             }
         }).join();
 
@@ -140,19 +155,22 @@ public class FingerprintService {
         if (service.isCaptureRunning()) {
             mbStop = true;
             service.setCaptureRunning(false);
-            return Response.ok("Captura interrompida com sucesso").build();
+            return this.creatResponse(Response.Status.OK, "Captura interrompida com sucesso", null);
+            // Response.ok("Captura interrompida com sucesso").build();
         } else {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Nenhuma captura em andamento").build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Nenhuma captura em andamento", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Nenhuma captura em andamento").build();
         }
     }
 
     public Response enrollFingerprint() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         if (service.getDevice() == 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Please turn on the device")
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Liga o dispositvo", null);
+            // return Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
         }
 
         if (!service.isRegister()) {
@@ -167,9 +185,10 @@ public class FingerprintService {
     public Response verifyFingerprint() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         if (service.getDevice() == 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Please turn on the device")
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Liga o dispositvo", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
         }
 
         resetState();
@@ -181,9 +200,10 @@ public class FingerprintService {
     public Response registarFingerprint() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         if (service.getDb() == 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Please turn on the device")
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Liga o dispositvo", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
         }
 
         String path = "d:\\test\\fingerprint.png";
@@ -199,21 +219,27 @@ public class FingerprintService {
                 service.setFid(service.getFid() + 1);
                 service.setRegTemp(sizeFPTemp[0]);
                 System.arraycopy(fpTemplate, 0, lastRegTemp, 0, service.getRegTemp());
-                return Response.ok("Sucesso no cadastramento").build();
+                return this.creatResponse(Response.Status.OK, "Sucesso no cadastramento", null);
+                // Response.ok("Sucesso no cadastramento").build();
             } else {
-                return Response.status(Response.Status.BAD_REQUEST).entity("DBAdd fail ret=" + ret).build();
+                return this.creatResponse(Response.Status.BAD_REQUEST, "Falha na conexão DB", null);
+                // Response.status(Response.Status.BAD_REQUEST).entity("DBAdd fail ret=" +
+                // ret).build();
             }
         } else {
-            return Response.status(Response.Status.BAD_REQUEST).entity("ExtractFromImage ret=" + ret).build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Falha da extracção da image", null);
+            // Response.status(Response.Status.BAD_REQUEST).entity("ExtractFromImage ret=" +
+            // ret).build();
         }
     }
 
     public Response identificarImage() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         if (service.getDb() == 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Please turn on the device")
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Liga o dispositvo", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
         }
 
         String path = "d:\\test\\fingerprint.png";
@@ -230,35 +256,42 @@ public class FingerprintService {
                 ret = FingerprintSensorEx.DBIdentify(service.getDb(), fpTemplate, fid, score);
 
                 if (ret == 0) {
-                    return Response.ok("Identificação com sucesso fid=" + fid[0] + ", score=" + score[0]).build();
+                    return this.creatResponse(Response.Status.OK, "Identificação com sucesso ", null);
+                    // Response.ok(fid=" + fid[0] + ", score=" + score[0]).build();
                 } else {
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .entity("Identify fail, errcode=" + ret)
-                            .build();
+                    return this.creatResponse(Response.Status.BAD_REQUEST, "Falha na identificação", null);
+                    // Response.status(Response.Status.BAD_REQUEST)
+                    // .entity("Identify fail, errcode=" + ret)
+                    // .build();
                 }
             } else {
 
                 if (service.getRegTemp() <= 0) {
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .entity("Please register first!")
-                            .build();
+                    return this.creatResponse(Response.Status.BAD_REQUEST, "Primeiro faça o registo", null);
+
+                    // Response.status(Response.Status.BAD_REQUEST)
+                    // .entity("Please register first!")
+                    // .build();
 
                 } else {
                     ret = FingerprintSensorEx.DBMatch(service.getDb(), lastRegTemp, fpTemplate);
                     if (ret > 0) {
-                        return Response.ok("Verify succ, score=" + ret).build();
+                        return this.creatResponse(Response.Status.OK, "Verificação com sucesso", null);
+                        // Response.ok("Verify succ, score=" + ret).build();
                     } else {
-                        return Response.status(Response.Status.BAD_REQUEST)
-                                .entity("Verify fail, ret=" + ret)
-                                .build();
+                        return this.creatResponse(Response.Status.BAD_REQUEST, "Falha na verificação", null);
+                        // Response.status(Response.Status.BAD_REQUEST)
+                        // .entity("Verify fail, ret=" + ret)
+                        // .build();
 
                     }
                 }
             }
         } else {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("ExtractFromImage fail, ret=" + ret)
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Falha da extracção da image", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("ExtractFromImage fail, ret=" + ret)
+            // .build();
 
         }
     }
@@ -266,9 +299,10 @@ public class FingerprintService {
     public Response identifyFingerprint() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
         if (service.getDevice() == 0) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Please turn on the device")
-                    .build();
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Liga o dispositvo", null);
+            // Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
         }
 
         if (service.isRegister()) {
@@ -288,32 +322,33 @@ public class FingerprintService {
 
     public Response closeDevice() {
         freeSensor();
-        return Response.ok("Device closed successfully").build();
+        return this.creatResponse(Response.Status.OK, "Dispositivo desligado com sucesso", null);
+        // Response.ok("Device closed successfully").build();
     }
 
     private void freeSensor() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
+    
         mbStop = true;
+
         try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
+           
+            if (service.getDb() != 0) {
+                FingerprintSensorEx.DBFree(service.getDb());
+                service.setDb(0);  
+            }
+    
+            if (service.getDevice() != 0) {
+                FingerprintSensorEx.CloseDevice(service.getDevice());
+                service.setDevice(0);  
+            }
+            FingerprintSensorEx.Terminate();
+        } catch (Exception e) {
+           
             e.printStackTrace();
         }
-
-        if (service.getDb() != 0) {
-            FingerprintSensorEx.DBFree(service.getDb());
-            service.setDb(0);
-        }
-
-        if (service.getDevice() != 0) {
-            FingerprintSensorEx.CloseDevice(service.getDevice());
-            service.setDevice(0);
-        }
-
-        service.resetState();
-        FingerprintSensorEx.Terminate();
-
     }
+    
 
     private void resetState() {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
@@ -458,5 +493,11 @@ public class FingerprintService {
         } else if (service.getRegTemp() > 0) {
             FingerprintSensorEx.DBMatch(service.getDb(), lastRegTemp, template);
         }
+    }
+
+    private Response creatResponse(Response.Status status, String message, Object object) {
+        ResponseBody responseBody = new ResponseBody(message, object);
+
+        return Response.status(status).entity(responseBody).build();
     }
 }

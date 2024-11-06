@@ -6,10 +6,14 @@ import java.util.logging.Logger;
 
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+// import org.glassfish.jersey.media.json.JsonProcessingFeature;
 
 import com.zk.exception.FingerPrintException;
 import com.zk.service.FingerFingerSocketService;
+import com.zk.utils.CORSFilter;
+import com.zk.utils.NotFoundFilter;
 
 public class App {
     private static final Logger LOGGER = Logger.getLogger(App.class.getName());
@@ -41,7 +45,7 @@ public class App {
 
     private void initializeServers() {
         try {
-           
+
             server = createHttpServer();
             FingerFingerSocketService.getInstance();
             logServerStartup();
@@ -52,13 +56,15 @@ public class App {
 
     private HttpServer createHttpServer() {
         ResourceConfig resourceConfig = new ResourceConfig()
-                .packages("com.zk");
+                .packages("com.zk")
+                .register(JsonProcessingFeature.class)
+                .register(NotFoundFilter.class)
+                .register(CORSFilter.class);
 
         return GrizzlyHttpServerFactory.createHttpServer(
                 URI.create(HTTP_SERVER_URI),
                 resourceConfig,
-                false 
-        );
+                false);
     }
 
     private void logServerStartup() {
@@ -67,7 +73,7 @@ public class App {
     }
 
     private void waitForShutdown() {
-       
+
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
 
         try {
@@ -92,9 +98,6 @@ public class App {
             LOGGER.log(Level.SEVERE, "Error during server shutdown", e);
         }
     }
-    
-
-   
 
     public static void main(String[] args) {
         App.getInstance().startApplication();

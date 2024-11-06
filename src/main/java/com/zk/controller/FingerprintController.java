@@ -1,7 +1,6 @@
 package com.zk.controller;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -18,7 +17,7 @@ public class FingerprintController {
         this.fingerprintService = new FingerprintService();
     }
 
-    @GET
+    @POST
     @Path("/open")
     @Produces(MediaType.APPLICATION_JSON)
     public Response openDevice() {
@@ -26,7 +25,7 @@ public class FingerprintController {
     }
 
     // CALL TO REGISTER FINGERPRINT ON TEMP
-    @GET
+    @POST
     @Path("/enroll")
     @Produces(MediaType.APPLICATION_JSON)
     public Response enrollFingerprint() {
@@ -34,7 +33,7 @@ public class FingerprintController {
     }
 
     // CALL TO VERIFICAR FINGERPRINT ALL PRINT OF SCREEN
-    @GET
+    @POST
     @Path("/verify")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
