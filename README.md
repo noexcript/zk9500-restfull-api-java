@@ -80,7 +80,6 @@ After install all tools above run some code on terminal on main directory, to in
         <artifactId>jackson-databind</artifactId>
         <version>2.12.5</version>
         </dependency>
-
         <dependency>
         <groupId>org.glassfish.jersey.media</groupId>
         <artifactId>jersey-media-json-processing</artifactId>
