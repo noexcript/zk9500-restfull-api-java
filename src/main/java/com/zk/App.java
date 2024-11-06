@@ -78,6 +78,7 @@ public class App {
 
         try {
             server.start();
+           
             Thread.currentThread().join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
