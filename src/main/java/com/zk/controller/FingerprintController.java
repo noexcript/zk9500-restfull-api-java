@@ -19,7 +19,7 @@ public class FingerprintController {
     }
 
     @GET
-    @Path("/")
+    @Path("/hello")
     @Produces(MediaType.APPLICATION_JSON)
     public Response helloWorld() {
         return fingerprintService.helloWorld();

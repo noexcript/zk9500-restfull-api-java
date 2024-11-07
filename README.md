@@ -27,7 +27,8 @@ After execute de command above in terminal execute the follow command  in termin
 To generated Setup on Windows
 
 ```bash
- $  jpackage --input target/ --name ZK9500-rest-api --main-jar ZK9500-REST-API.jar --main-class com.zk.App --type msi/exe --dest target/msi
+ $  jpackage --input target/ --name ZK9500-rest-api --main-jar ZK9500-REST-API.jar --main-class com.zk.App --type msi/exe --dest target/msi -UI
+ $  jpackage  --input target/  --name ZK9500-rest-api --main-jar ZK9500-REST-API.jar --main-class com.zk.App --type exe  --dest target/exe --win-console Without UI
 ```
 # Dependencies used
  ```xml

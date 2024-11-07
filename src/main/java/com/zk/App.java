@@ -9,6 +9,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 // import org.glassfish.jersey.media.json.JsonProcessingFeature;
@@ -61,6 +62,7 @@ public class App {
         ResourceConfig resourceConfig = new ResourceConfig()
                 .packages("com.zk")
                 .register(JsonProcessingFeature.class)
+                .register(JacksonFeature.class)
                 .register(NotFoundFilter.class)
                 .register(CORSFilter.class);
 
@@ -81,7 +83,7 @@ public class App {
 
         try {
             server.start();
-
+            System.out.println("Servidor iniciado. Pressione Ctrl+C para encerrar.");
             Thread.currentThread().join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
