@@ -39,7 +39,7 @@ public class FingerprintService {
         FingerprintServiceSingleton service = FingerprintServiceSingleton.getInstance();
 
         if (service.getDevice() != 0) {
-            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Dispositivo já está aberto",
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Dispositivo já está aberto",
                     null);
             // return Response.status(Response.Status.BAD_REQUEST)
             //         .entity("Device is already open")
@@ -49,9 +49,9 @@ public class FingerprintService {
         int ret = FingerprintSensorEx.Init();
         if (ret != FingerprintSensorErrorCode.ZKFP_ERR_OK) {
             freeSensor();
-            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao inicializar",
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Falha ao inicializar",
                     null);
-            // return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            // return Response.status(Response.Status.BAD_REQUEST)
             // .entity("Failed to initialize")
             // .build();
         }
@@ -60,7 +60,7 @@ public class FingerprintService {
         if (device == 0) {
             freeSensor();
 
-            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao abrir o dispositivo",
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Falha ao abrir o dispositivo",
                     null);
             // return Response.status(Response.Status.BAD_REQUEST)
             // .entity("Failed to open device: " + ret)
@@ -70,9 +70,9 @@ public class FingerprintService {
         service.setDevice(device);
 
         if (!initializeDevice()) {
-            return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Falha ao inicializar o dispositivo",
+            return this.creatResponse(Response.Status.BAD_REQUEST, "Falha ao inicializar o dispositivo",
                     null);
-            // Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            // Response.status(Response.Status.BAD_REQUEST)
             // .entity("Failed to initialize device")
             // .build();
         }
@@ -130,8 +130,8 @@ public class FingerprintService {
         return future.handle((base64Image, ex) -> {
             if (ex != null) {
                 service.setCaptureRunning(false);
-                return this.creatResponse(Response.Status.INTERNAL_SERVER_ERROR, "Erro ao capturar imagem", null);
-                // Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                return this.creatResponse(Response.Status.BAD_REQUEST, "Erro ao capturar imagem", null);
+                // Response.status(Response.Status.BAD_REQUEST)
                 // .entity("Erro ao capturar imagem: " + ex.getMessage())
                 // .build();
             }
@@ -180,6 +180,17 @@ public class FingerprintService {
         }
 
         return startCapture();
+    }
+    public Response helloWorld() {
+            return this.creatResponse(Response.Status.OK, "Hello  World", null);
+            // return Response.status(Response.Status.BAD_REQUEST)
+            // .entity("Please turn on the device")
+            // .build();
+        
+
+        
+
+       
     }
 
     public Response verifyFingerprint() {

@@ -1,6 +1,7 @@
 package com.zk.controller;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -17,6 +18,12 @@ public class FingerprintController {
         this.fingerprintService = new FingerprintService();
     }
 
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response helloWorld() {
+        return fingerprintService.helloWorld();
+    }
     @POST
     @Path("/open")
     @Produces(MediaType.APPLICATION_JSON)

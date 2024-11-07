@@ -10,12 +10,25 @@ If you are using VSCode, I recommend you install
 
 * # Extension Pack for Java
 
-After install all tools above run some code on terminal on main directory, to install all dependencies
+After install all tools above execute the follow code in terminal on main directory, to install all dependencies
 
 ```bash
  $ mvn clean package
 ```
 
+After execute de command above in terminal execute the follow command  in terminal on main directory, to run rest api
+
+
+```bash
+ $  mvn exec:java -Dexec.mainClass="com.zk.App"
+```
+
+
+To generated Setup on Windows
+
+```bash
+ $  jpackage --input target/ --name ZK9500-rest-api --main-jar ZK9500-REST-API.jar --main-class com.zk.App --type msi/exe --dest target/msi
+```
 # Dependencies used
  ```xml
     <dependencies>
